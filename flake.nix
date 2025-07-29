@@ -154,7 +154,7 @@
 
             echo "🧱 Instalacja WordPressa..."
             wp core install \
-              --url="http://localhost" \
+              --url="http://localhost:8080" \
               --title="Dev Site" \
               --admin_user=admin \
               --admin_password=admin \
@@ -164,6 +164,18 @@
               --allow-root
 
             echo "✅ WordPress gotowy w katalogu ./wordpress"
+          '';
+        };
+      };
+
+      apps.dev = flake-utils.lib.mkApp {
+        drv = pkgs.writeShellApplication {
+          name = "init-wordpress";
+          runtimeInputs = [pkgs.wp-cli pkgs.php pkgs.coreutils]; # i ewentualnie więcej
+          text = ''
+            set -euo pipefail
+            cd wordpress
+            php -S 127.0.0.1:8080
           '';
         };
       };
