@@ -41,6 +41,7 @@
         packages = [
           php
           pkgs.mariadb
+          pkgs.wp-cli
         ];
 
         shellHook = ''
