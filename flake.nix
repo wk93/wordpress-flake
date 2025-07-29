@@ -44,14 +44,13 @@
         ];
 
         shellHook = ''
-          echo "✅ WordPress devShell gotowy"
           export MYSQL_DATABASE=wordpress
           export MYSQL_USER=wordpress
           export MYSQL_PASSWORD=wordpress
           export MYSQL_ROOT_PASSWORD=root
           export MYSQL_UNIX_PORT=$PWD/run/mysql-socket/mysql.sock
 
-          mkdir -p run/mysql-socket
+          mkdir -p run/mysql-socket run/mariadb
 
           if [ ! -d ./run/mariadb/mysql ]; then
             echo "📦 Inicjalizacja bazy danych..."
@@ -64,6 +63,12 @@
                  --pid-file=./run/mariadb/mysqld.pid \
                  --log-error=./run/mariadb/error.log \
                  --skip-networking &
+          MYSQLD_PID=$!
+
+          # 🧼 Zatrzymaj mysqld po wyjściu z devShella
+          trap 'echo "🧹 Zatrzymywanie mysqld..."; kill $MYSQLD_PID' EXIT
+
+          echo "✅ WordPress devShell gotowy"
         '';
       };
     });
