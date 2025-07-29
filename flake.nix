@@ -168,6 +168,26 @@
         };
       };
 
+      apps.link-plugins = flake-utils.lib.mkApp {
+        drv = pkgs.writeShellApplication {
+          name = "link-plugins";
+          runtimeInputs = [pkgs.wp-cli pkgs.php pkgs.coreutils]; # i ewentualnie więcej
+          text = ''
+            echo "🔗 Linking local plugins..."
+            mkdir -p wordpress/wp-content/plugins
+            for plugin in "$PWD"/plugins/*; do
+              ln -sf "$plugin" wordpress/wp-content/plugins/
+            done
+
+            echo "⚡ Activating all local plugins..."
+            for plugin_dir in "$PWD"/plugins/*; do
+              plugin_slug="$(basename "$plugin_dir")"
+              wp plugin activate "$plugin_slug" --path=wordpress --allow-root || true
+            done
+          '';
+        };
+      };
+
       apps.dev = flake-utils.lib.mkApp {
         drv = pkgs.writeShellApplication {
           name = "init-wordpress";
