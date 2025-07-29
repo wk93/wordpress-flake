@@ -106,5 +106,66 @@
                     echo "✅ WordPress devShell gotowy z bazą i użytkownikiem"
         '';
       };
+      apps.default = {
+        type = "app";
+        program = "${pkgs.bash}/bin/bash";
+      };
+
+      apps.init = flake-utils.lib.mkApp {
+        drv = pkgs.writeShellApplication {
+          name = "init-wordpress";
+          runtimeInputs = [pkgs.wp-cli pkgs.php pkgs.coreutils]; # i ewentualnie więcej
+          text = ''
+            set -euo pipefail
+
+            export MYSQL_DATABASE=wordpress
+            export MYSQL_USER=wordpress
+            export MYSQL_PASSWORD=wordpress
+            export MYSQL_ROOT_PASSWORD=root
+            export MYSQL_UNIX_PORT="$PWD/run/mysql-socket/mysql.sock"
+
+            export WP_CLI_PACKAGES_DIR="$PWD/.wp-cli"
+            export WP_CLI_CACHE_DIR="$PWD/.wp-cli/cache"
+
+            mkdir -p "$WP_CLI_PACKAGES_DIR" "$WP_CLI_CACHE_DIR"
+
+            if [ ! -d wordpress ]; then
+              echo "⬇️  Pobieranie WordPressa..."
+              wp core download --path=wordpress --allow-root
+            fi
+
+            SOCKET_PATH="$(pwd)/run/mysql-socket/mysql.sock"
+
+
+            echo "⚙️  Tworzenie wp-config.php..."
+            wp config create \
+              --dbname="$MYSQL_DATABASE" \
+              --dbuser="$MYSQL_USER" \
+              --dbpass="$MYSQL_PASSWORD" \
+              --dbhost="localhost:$SOCKET_PATH" \
+              --path=wordpress \
+              --allow-root \
+              --skip-check
+
+            wp db check --path=wordpress
+
+            export WP_CLI_ARGS_DB="--socket=$MYSQL_UNIX_PORT"
+
+
+            echo "🧱 Instalacja WordPressa..."
+            wp core install \
+              --url="http://localhost" \
+              --title="Dev Site" \
+              --admin_user=admin \
+              --admin_password=admin \
+              --admin_email=admin@example.com \
+              --path=wordpress \
+              --skip-email \
+              --allow-root
+
+            echo "✅ WordPress gotowy w katalogu ./wordpress"
+          '';
+        };
+      };
     });
 }
